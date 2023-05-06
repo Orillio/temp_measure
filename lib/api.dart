@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-
 part 'api.freezed.dart';
+part 'api.g.dart';
 
 @freezed
 class AppState with _$AppState {
@@ -36,20 +37,33 @@ class Api extends Cubit<AppState> {
   }
 
   Future<List<Record>> getRecords() async {
+    var response = await _dio
+        .get('https://mirai-tracker2.markovvn1.ru/chart', queryParameters: {
+      'start': _referenceDate.toString(),
+      'stop': DateTime.now().toString(),
+    });
+    return List.generate(response.data.length, (index) {
+      return Record(
+        timestamp: DateTime.parse(response.data[index]['timestamp']),
+        recieved: DateTime.parse(response.data[index]['recieved']),
+        temperature: response.data[index]['temperature'],
+        humidity: response.data[index]['humidity'],
+        battery: response.data[index]['battery'],
+        location: response.data[index]['location'],
+      );
+    });
+  }
+
+  Future<List<Record>> getRecordsFake() async {
     var a = 1000000;
     var list = List.generate(500, (index) {
       return Record(
-        (a += r.nextInt(1000)),
-        (a += r.nextInt(1000)),
-        r.nextBool() ? (r.nextDouble() * 50) + 20 : null,
-        r.nextBool() ? (r.nextDouble() * 30) + 20 : null,
-        r.nextBool() ? (r.nextDouble() * 30) + 20 : null,
-        r.nextBool()
-            ? Location(
-                (r.nextDouble() * 60) + 20,
-                (r.nextDouble() * 60) + 20,
-              )
-            : null,
+        timestamp: DateTime.fromMillisecondsSinceEpoch(a += r.nextInt(1000)),
+        recieved: DateTime.fromMillisecondsSinceEpoch(a += r.nextInt(1000)),
+        temperature: r.nextBool() ? (r.nextDouble() * 50) + 20 : null,
+        humidity: r.nextBool() ? (r.nextDouble() * 30) + 20 : null,
+        battery: r.nextBool() ? (r.nextInt(1) * 30) + 20 : null,
+        location: null,
       );
     });
     list.removeWhere((element) => false);
@@ -59,9 +73,12 @@ class Api extends Cubit<AppState> {
   List<FlSpot> getTempChart() {
     if (state.records != null) {
       var list = state.records!.toList()
-        ..removeWhere((element) => element.temp == null);
+        ..removeWhere((element) => element.temperature == null);
 
-      return list.map((e) => FlSpot(e.ts.toDouble(), e.temp!)).toList();
+      return list
+          .map((e) => FlSpot(
+              e.timestamp.millisecondsSinceEpoch.toDouble(), e.temperature!))
+          .toList();
     }
     return [];
   }
@@ -71,16 +88,21 @@ class Api extends Cubit<AppState> {
       var list = state.records!.toList()
         ..removeWhere((element) => element.humidity == null);
 
-      return list.map((e) => FlSpot(e.ts.toDouble(), e.humidity!)).toList();
+      return list
+          .map((e) => FlSpot(
+              e.timestamp.millisecondsSinceEpoch.toDouble(), e.humidity!))
+          .toList();
     }
     return [];
   }
 
   Location getLastLocation() {
     return state.records
-            ?.lastWhere((element) => element.location != null)
-            .location ??
-        Location(0, 0);
+            ?.lastWhereOrNull(
+              (element) => element.location != null,
+            )
+            ?.location ??
+        Location(longitude: 41.5, latitude: 41.5);
   }
 
   double getLastBatteryValue() {
@@ -95,21 +117,27 @@ class Api extends Cubit<AppState> {
   }
 }
 
-class Record {
-  final int ts;
-  final int received;
-  double? temp;
-  double? humidity;
-  double? battery;
-  Location? location;
+@freezed
+class Record with _$Record {
+  factory Record({
+    required DateTime timestamp,
+    required DateTime recieved,
+    double? temperature,
+    double? humidity,
+    double? battery,
+    Location? location,
+  }) = _Record;
 
-  Record(this.ts, this.received, this.temp, this.humidity, this.battery,
-      this.location);
+  factory Record.fromJson(Map<String, dynamic> json) => _$RecordFromJson(json);
 }
 
-class Location {
-  final double longitude;
-  final double latitude;
+@freezed
+class Location with _$Location {
+  factory Location({
+    required double longitude,
+    required double latitude,
+  }) = _Location;
 
-  Location(this.longitude, this.latitude);
+  factory Location.fromJson(Map<String, dynamic> json) =>
+      _$LocationFromJson(json);
 }

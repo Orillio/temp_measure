@@ -95,8 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           ],
                           titlesData: FlTitlesData(
                             topTitles: AxisTitles(
-                              axisNameWidget:
-                                  const Text("Temperature and humidity"),
+                              axisNameWidget: const Text("Temperature"),
                             ),
                             bottomTitles: AxisTitles(
                               sideTitles: SideTitles(
@@ -155,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         const Text('choose a reference date'),
                                   ),
                                   Text(
-                                    'Battery: ${bloc.getLastBatteryValue().round()}%',
+                                    'Battery: ${bloc.getLastBatteryValue().round()}',
                                     style: const TextStyle(
                                       fontSize: 20,
                                     ),
