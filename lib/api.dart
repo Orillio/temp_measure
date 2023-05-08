@@ -19,7 +19,7 @@ class Api extends Cubit<AppState> {
   final Dio _dio = Dio();
   final Random r = Random();
 
-  DateTime _referenceDate = DateTime(1970);
+  DateTime _referenceDate = DateTime.now().subtract(const Duration(days: 1));
 
   Api() : super(const AppState()) {
     getRecords().then(
@@ -37,15 +37,22 @@ class Api extends Cubit<AppState> {
   }
 
   Future<List<Record>> getRecords() async {
-    var response = await _dio
-        .get('https://mirai-tracker2.markovvn1.ru/chart', queryParameters: {
-      'start': _referenceDate.toString(),
-      'stop': DateTime.now().toString(),
-    });
+    var response = await _dio.get(
+      'https://mirai-tracker2.markovvn1.ru/chart',
+      queryParameters: {
+        'start': _referenceDate.toString(),
+        'stop': DateTime.now().toString(),
+      },
+      options: Options(
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        },
+      ),
+    );
     return List.generate(response.data.length, (index) {
       return Record(
-        timestamp: DateTime.parse(response.data[index]['timestamp']),
-        recieved: DateTime.parse(response.data[index]['recieved']),
+        timestamp: DateTime.parse(response.data[index]['timestamp']).toLocal(),
+        recieved: DateTime.parse(response.data[index]['recieved']).toLocal(),
         temperature: response.data[index]['temperature'],
         humidity: response.data[index]['humidity'],
         battery: response.data[index]['battery'],
@@ -70,8 +77,8 @@ class Api extends Cubit<AppState> {
     return list;
   }
 
-  List<FlSpot> getTempChart() {
-    if (state.records != null) {
+  List<FlSpot>? getTempChart() {
+    if (state.records?.isNotEmpty ?? false) {
       var list = state.records!.toList()
         ..removeWhere((element) => element.temperature == null);
 
@@ -80,11 +87,11 @@ class Api extends Cubit<AppState> {
               e.timestamp.millisecondsSinceEpoch.toDouble(), e.temperature!))
           .toList();
     }
-    return [];
+    return null;
   }
 
-  List<FlSpot> getHumidityChart() {
-    if (state.records != null) {
+  List<FlSpot>? getHumidityChart() {
+    if (state.records?.isNotEmpty ?? false) {
       var list = state.records!.toList()
         ..removeWhere((element) => element.humidity == null);
 
@@ -93,22 +100,21 @@ class Api extends Cubit<AppState> {
               e.timestamp.millisecondsSinceEpoch.toDouble(), e.humidity!))
           .toList();
     }
-    return [];
+    return null;
   }
 
-  Location getLastLocation() {
+  Location? getLastLocation() {
     return state.records
-            ?.lastWhereOrNull(
-              (element) => element.location != null,
-            )
-            ?.location ??
-        Location(longitude: 41.5, latitude: 41.5);
+        ?.lastWhereOrNull(
+          (element) => element.location != null,
+        )
+        ?.location;
   }
 
-  double getLastBatteryValue() {
+  double? getLastBatteryValue() {
     return state.records
-            ?.lastWhere((element) => element.battery != null)
-            .battery ??
+            ?.lastWhereOrNull((element) => element.battery != null)
+            ?.battery ??
         0;
   }
 
