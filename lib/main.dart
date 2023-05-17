@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
       home: BlocProvider(
         create: (context) => Api(),
         child: const MyHomePage(
-          title: 'Flutter Demo Home Page',
+          title: 'Temperature and GPS sensor',
         ),
       ),
     );
@@ -221,7 +221,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         const Text('choose a reference date'),
                                   ),
                                   Text(
-                                    'Battery: ${bloc.getLastBatteryValue()?.round() ?? 'No battery info'}',
+                                    'Battery: ${bloc.getLastBatteryValue() ?? 'No battery info'}',
                                     style: const TextStyle(
                                       fontSize: 20,
                                     ),

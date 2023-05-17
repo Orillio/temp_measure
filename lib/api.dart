@@ -56,7 +56,12 @@ class Api extends Cubit<AppState> {
         temperature: response.data[index]['temperature'],
         humidity: response.data[index]['humidity'],
         battery: response.data[index]['battery'],
-        location: response.data[index]['location'],
+        location: response.data[index]['location'] != null
+            ? Location(
+                latitude: response.data[index]['location']['latitude'],
+                longitude: response.data[index]['location']['longitude'],
+              )
+            : null,
       );
     });
   }
@@ -104,18 +109,16 @@ class Api extends Cubit<AppState> {
   }
 
   Location? getLastLocation() {
-    return state.records
-        ?.lastWhereOrNull(
-          (element) => element.location != null,
-        )
-        ?.location;
+    return state.records?.last.location;
   }
 
-  double? getLastBatteryValue() {
-    return state.records
-            ?.lastWhereOrNull((element) => element.battery != null)
-            ?.battery ??
-        0;
+  String? getLastBatteryValue() {
+    var battery = state.records?.last.battery;
+    if (battery != null) {
+      return '${battery.round()} mV';
+    } else {
+      return null;
+    }
   }
 
   void changeReferenceDate(DateTime time) {
