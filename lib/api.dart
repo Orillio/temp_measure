@@ -109,11 +109,19 @@ class Api extends Cubit<AppState> {
   }
 
   Location? getLastLocation() {
-    return state.records?.last.location;
+    var records = state.records;
+    if (records == null || records.isEmpty) {
+      return null;
+    }
+    return records.last.location;
   }
 
-  String? getLastBatteryValue() {
-    var battery = state.records?.last.battery;
+String? getLastBatteryValue() {
+    var records = state.records;
+    if (records == null || records.isEmpty) {
+      return null;
+    }
+    var battery = records.last.battery;
     if (battery != null) {
       return '${battery.round()} mV';
     } else {
